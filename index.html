@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ビンゴ当選番号モニター</title>
   <style>
     * {
@@ -14,16 +15,18 @@
       background-color: #121212;
       color: #ffffff;
       height: 100vh;
-      padding: 20px;
+      padding: 15px;
       display: flex;
       flex-direction: column;
       gap: 15px;
+      user-select: none;
+      outline: none;
     }
     
     .main-container {
       display: flex;
       flex: 1;
-      gap: 20px;
+      gap: 15px;
       min-height: 0;
     }
 
@@ -32,7 +35,7 @@
       flex: 1;
       background: #1e1e2f;
       border-radius: 16px;
-      padding: 15px;
+      padding: 12px;
       display: grid;
       grid-template-columns: repeat(10, 1fr);
       grid-template-rows: repeat(10, 1fr);
@@ -48,14 +51,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: all 0.2s ease;
+      transition: transform 0.1s, background-color 0.2s;
       cursor: pointer;
-      user-select: none;
-      border: 2px solid transparent;
+      -webkit-tap-highlight-color: transparent;
     }
-    .board-cell:hover {
-      border-color: #7070a0;
+    .board-cell:active {
+      transform: scale(0.92);
     }
+
     /* 出た数字 */
     .board-cell.hit {
       background-color: #2ed573;
@@ -68,11 +71,6 @@
       color: #121212;
       box-shadow: 0 0 15px rgba(255, 204, 0, 0.8);
       animation: pop 0.3s ease-out;
-    }
-    /* 削除用に選択中のスタイル */
-    .board-cell.selected-for-delete {
-      border: 3px solid #ff4757 !important;
-      transform: scale(0.95);
     }
 
     /* 右側：最新表示 & コントロールエリア */
@@ -93,68 +91,77 @@
       align-items: center;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
       border: 2px solid #3a3a5a;
+      position: relative;
     }
     .label {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       color: #a0a0c0;
       letter-spacing: 2px;
       margin-bottom: 10px;
     }
     .current-number {
-      font-size: 9rem;
+      font-size: 8.5rem;
       font-weight: bold;
       color: #ffcc00;
       text-shadow: 0 0 30px rgba(255, 204, 0, 0.6);
       line-height: 1;
     }
 
-    /* 入力 & 操作エリア */
+    /* キーボード入力中の数字バッファ表示 */
+    .key-buffer {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      font-size: 1.2rem;
+      color: #8888aa;
+    }
+    .key-buffer span {
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    /* モード切替エリア */
     .control-panel {
       background: #1e1e2f;
       border-radius: 12px;
-      padding: 15px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       border: 2px solid #3a3a5a;
     }
-    .input-row {
+    .mode-title {
+      font-size: 0.85rem;
+      color: #a0a0c0;
+      text-align: center;
+    }
+    .mode-buttons {
       display: flex;
       gap: 10px;
     }
-    input[type="number"] {
+    .btn-mode {
       flex: 1;
-      font-size: 1.6rem;
-      padding: 8px;
+      font-size: 1.2rem;
+      padding: 14px 0;
       border-radius: 8px;
-      border: none;
-      text-align: center;
-      outline: none;
-      width: 0;
+      border: 2px solid transparent;
+      background-color: #2f3542;
+      color: #747d8c;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .btn-add {
-      font-size: 1.1rem;
-      padding: 12px 20px;
-      border-radius: 8px;
-      border: none;
+    .btn-mode.active-add {
       background-color: #2ed573;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(46, 213, 115, 0.5);
     }
-    .btn-add:hover { background-color: #26af5f; }
-
-    .btn-delete {
-      font-size: 1.1rem;
-      padding: 12px 20px;
-      border-radius: 8px;
-      border: none;
+    .btn-mode.active-delete {
       background-color: #ff4757;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(255, 71, 87, 0.5);
     }
-    .btn-delete:hover { background-color: #ff6b81; }
 
     @keyframes pop {
       0% { transform: scale(0.7); }
@@ -172,13 +179,14 @@
       <div class="main-display">
         <div class="label">LATEST</div>
         <div class="current-number" id="currentNumber">--</div>
+        <div class="key-buffer" id="keyBufferDisplay">入力: <span id="keyBuffer">--</span></div>
       </div>
 
       <div class="control-panel">
-        <div class="input-row">
-          <input type="number" id="numInput" min="1" max="99" placeholder="当選番号" autofocus>
-          <button class="btn-add" onclick="addNumber()">追加</button>
-          <button class="btn-delete" onclick="deleteSelected()">削除</button>
+        <div class="mode-title">タップ / キー入力動作</div>
+        <div class="mode-buttons">
+          <button id="modeAddBtn" class="btn-mode active-add" onclick="setMode('add')">追加</button>
+          <button id="modeDeleteBtn" class="btn-mode" onclick="setMode('delete')">削除</button>
         </div>
       </div>
     </div>
@@ -186,7 +194,9 @@
 
   <script>
     let history = [];
-    const selectedForDelete = new Set();
+    let currentMode = 'add';
+    let keyBuffer = '';
+    let keyTimer = null;
     const boardEl = document.getElementById('board');
 
     // 1?99のセル生成
@@ -195,84 +205,77 @@
       cell.className = 'board-cell';
       cell.id = `cell-${i}`;
       cell.textContent = i;
-      cell.onclick = () => toggleSelectCell(i);
+      cell.onclick = () => processNumber(i);
       boardEl.appendChild(cell);
     }
 
-    // 番号を追加
-    function addNumber() {
-      const input = document.getElementById('numInput');
-      const val = parseInt(input.value, 10);
+    // モード切り替え
+    function setMode(mode) {
+      currentMode = mode;
+      const addBtn = document.getElementById('modeAddBtn');
+      const delBtn = document.getElementById('modeDeleteBtn');
 
-      if (isNaN(val) || val < 1 || val > 99) {
-        alert('1から99までの数字を入力してください。');
-        input.value = '';
-        input.focus();
-        return;
-      }
-
-      if (history.includes(val)) {
-        alert('その数字はすでに出ています！');
-        input.value = '';
-        input.focus();
-        return;
-      }
-
-      history.push(val);
-      updateDisplay();
-
-      input.value = '';
-      input.focus();
-    }
-
-    // 左側の番号をクリックしたときの動作（削除候補として選択/解除）
-    function toggleSelectCell(num) {
-      if (!history.includes(num)) return;
-
-      if (selectedForDelete.has(num)) {
-        selectedForDelete.delete(num);
+      if (mode === 'add') {
+        addBtn.className = 'btn-mode active-add';
+        delBtn.className = 'btn-mode';
       } else {
-        selectedForDelete.add(num);
+        addBtn.className = 'btn-mode';
+        delBtn.className = 'btn-mode active-delete';
       }
-      updateCellSelectionStyles();
     }
 
-    // 「削除」ボタンを押したときの処理
-    function deleteSelected() {
-      const input = document.getElementById('numInput');
-      const inputVal = parseInt(input.value, 10);
+    // 数字の処理（追加または削除）
+    function processNumber(num) {
+      if (num < 1 || num > 99) return;
 
-      if (!isNaN(inputVal) && history.includes(inputVal)) {
-        selectedForDelete.add(inputVal);
-      }
-
-      if (selectedForDelete.size === 0) {
-        alert('削除したい番号をクリックして選択するか、入力欄に指定してください。');
-        return;
-      }
-
-      history = history.filter(num => !selectedForDelete.has(num));
-      selectedForDelete.clear();
-
-      updateDisplay();
-
-      input.value = '';
-      input.focus();
-    }
-
-    // セルの選択状態（赤枠）の見た目を更新
-    function updateCellSelectionStyles() {
-      for (let i = 1; i <= 99; i++) {
-        const cell = document.getElementById(`cell-${i}`);
-        if (selectedForDelete.has(i)) {
-          cell.classList.add('selected-for-delete');
-        } else {
-          cell.classList.remove('selected-for-delete');
+      if (currentMode === 'add') {
+        if (!history.includes(num)) {
+          history.push(num);
         }
+      } else {
+        history = history.filter(n => n !== num);
       }
+      updateDisplay();
     }
 
-    // 全体の表示状態を更新
+    // PCキーボード入力対応（input不要）
+    document.addEventListener('keydown', (e) => {
+      // 1?9の数字キー（テンキー含む）
+      if (e.key >= '0' && e.key <= '9') {
+        clearTimeout(keyTimer);
+        keyBuffer += e.key;
+
+        // 2桁入力されたら即時確定、または1秒待機
+        const val = parseInt(keyBuffer, 10);
+        document.getElementById('keyBuffer').textContent = keyBuffer;
+
+        if (keyBuffer.length >= 2) {
+          processNumber(val);
+          resetKeyBuffer();
+        } else {
+          keyTimer = setTimeout(() => {
+            processNumber(parseInt(keyBuffer, 10));
+            resetKeyBuffer();
+          }, 1200);
+        }
+      } else if (e.key === 'Enter') {
+        if (keyBuffer !== '') {
+          clearTimeout(keyTimer);
+          processNumber(parseInt(keyBuffer, 10));
+          resetKeyBuffer();
+        }
+      } else if (e.key === 'Backspace' || e.key === 'Escape') {
+        clearTimeout(keyTimer);
+        resetKeyBuffer();
+      }
+    });
+
+    function resetKeyBuffer() {
+      keyBuffer = '';
+      document.getElementById('keyBuffer').textContent = '--';
+    }
+
+    // 表示更新
     function updateDisplay() {
       for (let i = 1; i <= 99; i++) {
         const cell = document.getElementById(`cell-${i}`);
@@ -281,7 +284,6 @@
 
       if (history.length === 0) {
         document.getElementById('currentNumber').textContent = '--';
-        selectedForDelete.clear();
         return;
       }
 
@@ -295,16 +297,7 @@
       if (latestCell) latestCell.className = 'board-cell latest-hit';
       
       document.getElementById('currentNumber').textContent = latest;
-
-      updateCellSelectionStyles();
     }
-
-    // Enterキー対応
-    document.getElementById('numInput').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        addNumber();
-      }
-    });
   </script>
 </body>
 </html>
