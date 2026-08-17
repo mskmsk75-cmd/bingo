@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>ビンゴ当選番号モニター</title>
   <style>
     * {
@@ -14,41 +14,45 @@
       font-family: 'Helvetica Neue', Arial, sans-serif;
       background-color: #121212;
       color: #ffffff;
+      /* dvhに対応（モバイルのアドレスバーの高さを自動考慮） */
       height: 100vh;
+      height: 100dvh;
       width: 100vw;
-      padding: 1.5vw;
+      padding: 1vw;
       display: flex;
-      gap: 1.5vw;
+      gap: 1vw;
       user-select: none;
       overflow: hidden;
     }
 
-    /* 左側：1?99のグリッド一覧 */
+    /* 左側：1〜99のグリッド一覧 */
     .board-section {
       flex: 1;
       height: 100%;
       background: #1e1e2f;
-      border-radius: 16px;
-      padding: 1vw;
+      border-radius: 12px;
+      padding: 0.8vw;
       display: grid;
       grid-template-columns: repeat(10, 1fr);
       grid-template-rows: repeat(10, 1fr);
-      gap: 0.4vw;
+      gap: 0.3vw;
       border: 2px solid #3a3a5a;
+      min-height: 0; /* 画面内に収まるよう縮小を許可 */
     }
     .board-cell {
       background-color: #2a2a40;
       color: #57606f;
-      /* ★ 枠サイズはそのまま、文字サイズのみ大幅アップ */
-      font-size: min(2.8vw, 4.2vh);
+      /* 縦長・横長どちらの画面でも収まるようフォントサイズを自動調整 */
+      font-size: min(2.5vw, 3.5vh);
       font-weight: 900;
-      border-radius: 6px;
+      border-radius: 4px;
       display: flex;
       justify-content: center;
       align-items: center;
       transition: transform 0.1s, background-color 0.2s;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      min-height: 0;
     }
     .board-cell:active {
       transform: scale(0.92);
@@ -70,33 +74,35 @@
 
     /* 右側：最新表示 & コントロールエリア */
     .sidebar {
-      width: 30vw;
+      width: 28vw;
       height: 100%;
       display: flex;
       flex-direction: column;
-      gap: 1.5vw;
+      gap: 1vw;
+      min-height: 0;
     }
     
     .main-display {
       flex: 1;
       background: linear-gradient(135deg, #1e1e2f, #2a2a40);
-      border-radius: 16px;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
       border: 2px solid #3a3a5a;
-      padding: 10px;
+      padding: 5px;
+      min-height: 0;
     }
     .label {
-      font-size: min(2vw, 3vh);
+      font-size: min(1.8vw, 2.5vh);
       color: #a0a0c0;
       letter-spacing: 2px;
-      margin-bottom: 0.5vh;
+      margin-bottom: 0.2vh;
     }
     .current-number {
-      font-size: min(15vw, 22vh);
+      font-size: min(14vw, 18vh);
       font-weight: bold;
       color: #ffcc00;
       text-shadow: 0 0 35px rgba(255, 204, 0, 0.6);
@@ -106,27 +112,27 @@
     /* モード切替エリア */
     .control-panel {
       background: #1e1e2f;
-      border-radius: 12px;
-      padding: 1vw;
+      border-radius: 10px;
+      padding: 0.8vw;
       display: flex;
       flex-direction: column;
-      gap: 0.5vw;
+      gap: 0.4vw;
       border: 2px solid #3a3a5a;
     }
     .mode-title {
-      font-size: min(0.9vw, 1.5vh);
+      font-size: min(0.8vw, 1.3vh);
       color: #a0a0c0;
       text-align: center;
     }
     .mode-buttons {
       display: flex;
-      gap: 1vw;
+      gap: 0.8vw;
     }
     .btn-mode {
       flex: 1;
-      font-size: min(1.4vw, 2.2vh);
-      padding: 1.2vh 0;
-      border-radius: 8px;
+      font-size: min(1.2vw, 1.8vh);
+      padding: 1vh 0;
+      border-radius: 6px;
       border: 2px solid transparent;
       background-color: #2f3542;
       color: #747d8c;
@@ -178,7 +184,7 @@
     let keyTimer = null;
     const boardEl = document.getElementById('board');
 
-    // 1?99のセル生成
+    // 1〜99のセル生成
     for (let i = 1; i <= 99; i++) {
       const cell = document.createElement('div');
       cell.className = 'board-cell';
