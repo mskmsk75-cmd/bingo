@@ -15,38 +15,33 @@
       background-color: #121212;
       color: #ffffff;
       height: 100vh;
-      padding: 15px;
+      width: 100vw;
+      padding: 1.5vw;
       display: flex;
-      flex-direction: column;
-      gap: 15px;
+      gap: 1.5vw;
       user-select: none;
-      outline: none;
-    }
-    
-    .main-container {
-      display: flex;
-      flex: 1;
-      gap: 15px;
-      min-height: 0;
+      overflow: hidden;
     }
 
     /* 左側：1?99のグリッド一覧 */
     .board-section {
       flex: 1;
+      height: 100%;
       background: #1e1e2f;
       border-radius: 16px;
-      padding: 12px;
+      padding: 1vw;
       display: grid;
       grid-template-columns: repeat(10, 1fr);
       grid-template-rows: repeat(10, 1fr);
-      gap: 6px;
+      gap: 0.4vw;
       border: 2px solid #3a3a5a;
     }
     .board-cell {
       background-color: #2a2a40;
       color: #57606f;
-      font-size: 1.2rem;
-      font-weight: bold;
+      /* ★ 枠サイズはそのまま、文字サイズのみ大幅アップ */
+      font-size: min(2.8vw, 4.2vh);
+      font-weight: 900;
       border-radius: 6px;
       display: flex;
       justify-content: center;
@@ -75,10 +70,11 @@
 
     /* 右側：最新表示 & コントロールエリア */
     .sidebar {
-      width: 32%;
+      width: 30vw;
+      height: 100%;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 1.5vw;
     }
     
     .main-display {
@@ -91,59 +87,45 @@
       align-items: center;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
       border: 2px solid #3a3a5a;
-      position: relative;
+      padding: 10px;
     }
     .label {
-      font-size: 1.4rem;
+      font-size: min(2vw, 3vh);
       color: #a0a0c0;
       letter-spacing: 2px;
-      margin-bottom: 10px;
+      margin-bottom: 0.5vh;
     }
     .current-number {
-      font-size: 8.5rem;
+      font-size: min(15vw, 22vh);
       font-weight: bold;
       color: #ffcc00;
-      text-shadow: 0 0 30px rgba(255, 204, 0, 0.6);
+      text-shadow: 0 0 35px rgba(255, 204, 0, 0.6);
       line-height: 1;
-    }
-
-    /* キーボード入力中の数字バッファ表示 */
-    .key-buffer {
-      position: absolute;
-      bottom: 15px;
-      right: 20px;
-      font-size: 1.2rem;
-      color: #8888aa;
-    }
-    .key-buffer span {
-      color: #ffffff;
-      font-weight: bold;
-      font-size: 1.5rem;
     }
 
     /* モード切替エリア */
     .control-panel {
       background: #1e1e2f;
       border-radius: 12px;
-      padding: 12px;
+      padding: 1vw;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 0.5vw;
       border: 2px solid #3a3a5a;
     }
     .mode-title {
-      font-size: 0.85rem;
+      font-size: min(0.9vw, 1.5vh);
       color: #a0a0c0;
       text-align: center;
     }
     .mode-buttons {
       display: flex;
-      gap: 10px;
+      gap: 1vw;
     }
     .btn-mode {
       flex: 1;
-      font-size: 1.2rem;
-      padding: 14px 0;
+      font-size: min(1.4vw, 2.2vh);
+      padding: 1.2vh 0;
       border-radius: 8px;
       border: 2px solid transparent;
       background-color: #2f3542;
@@ -172,22 +154,19 @@
 </head>
 <body>
 
-  <div class="main-container">
-    <div class="board-section" id="board"></div>
+  <div class="board-section" id="board"></div>
 
-    <div class="sidebar">
-      <div class="main-display">
-        <div class="label">LATEST</div>
-        <div class="current-number" id="currentNumber">--</div>
-        <div class="key-buffer" id="keyBufferDisplay">入力: <span id="keyBuffer">--</span></div>
-      </div>
+  <div class="sidebar">
+    <div class="main-display">
+      <div class="label">LATEST</div>
+      <div class="current-number" id="currentNumber">--</div>
+    </div>
 
-      <div class="control-panel">
-        <div class="mode-title">タップ / キー入力動作</div>
-        <div class="mode-buttons">
-          <button id="modeAddBtn" class="btn-mode active-add" onclick="setMode('add')">追加</button>
-          <button id="modeDeleteBtn" class="btn-mode" onclick="setMode('delete')">削除</button>
-        </div>
+    <div class="control-panel">
+      <div class="mode-title">タップ / キー入力動作</div>
+      <div class="mode-buttons">
+        <button id="modeAddBtn" class="btn-mode active-add" onclick="setMode('add')">追加</button>
+        <button id="modeDeleteBtn" class="btn-mode" onclick="setMode('delete')">削除</button>
       </div>
     </div>
   </div>
@@ -209,6 +188,14 @@
       boardEl.appendChild(cell);
     }
 
+    // 画面リロード・退出時の警告ダイアログ
+    window.addEventListener('beforeunload', (e) => {
+      if (history.length > 0) {
+        e.preventDefault();
+        e.returnValue = '番号がリセットされますがよろしいですか？';
+      }
+    });
+
     // モード切り替え
     function setMode(mode) {
       currentMode = mode;
@@ -224,7 +211,7 @@
       }
     }
 
-    // 数字の処理（追加または削除）
+    // 数字の処理
     function processNumber(num) {
       if (num < 1 || num > 99) return;
 
@@ -238,42 +225,34 @@
       updateDisplay();
     }
 
-    // PCキーボード入力対応（input不要）
+    // キーボード入力対応
     document.addEventListener('keydown', (e) => {
-      // 1?9の数字キー（テンキー含む）
       if (e.key >= '0' && e.key <= '9') {
         clearTimeout(keyTimer);
         keyBuffer += e.key;
 
-        // 2桁入力されたら即時確定、または1秒待機
         const val = parseInt(keyBuffer, 10);
-        document.getElementById('keyBuffer').textContent = keyBuffer;
 
         if (keyBuffer.length >= 2) {
           processNumber(val);
-          resetKeyBuffer();
+          keyBuffer = '';
         } else {
           keyTimer = setTimeout(() => {
             processNumber(parseInt(keyBuffer, 10));
-            resetKeyBuffer();
+            keyBuffer = '';
           }, 1200);
         }
       } else if (e.key === 'Enter') {
         if (keyBuffer !== '') {
           clearTimeout(keyTimer);
           processNumber(parseInt(keyBuffer, 10));
-          resetKeyBuffer();
+          keyBuffer = '';
         }
       } else if (e.key === 'Backspace' || e.key === 'Escape') {
         clearTimeout(keyTimer);
-        resetKeyBuffer();
+        keyBuffer = '';
       }
     });
-
-    function resetKeyBuffer() {
-      keyBuffer = '';
-      document.getElementById('keyBuffer').textContent = '--';
-    }
 
     // 表示更新
     function updateDisplay() {
